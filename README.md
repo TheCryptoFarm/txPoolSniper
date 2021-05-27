@@ -1,10 +1,11 @@
 # txPoolSniper
 
 1. install Node ~v12.14.1
+1. edit env.json
 1. npm i
-1. node app.js
-1. ...
-1. profit
+3. node app.js
+4. ...
+5. profit
 
 
 This can be ran on a Quiknode, but you really need your own full node.
