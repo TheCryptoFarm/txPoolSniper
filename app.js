@@ -2,9 +2,7 @@
 const env = require("./env.json");
 Object.assign(process.env, env);
 
-const Util = require("util");
 const ethers = require("ethers");
-
 const purchaseToken = process.env.PURCHASE_TOKEN;
 const purchaseAmount = ethers.utils.parseUnits(
   process.env.PURCHASE_AMOUNT,
@@ -84,7 +82,7 @@ const BuyToken = async (txHash) => {
     purchaseToken,
   ]);
   const amountOutMin = amounts[1].sub(amounts[1].div(slippage));
-  const tx = await router.swapExactETHForTokens(
+  const tx = await router.swapExactETHForTokensSupportingFeeOnTransferTokens(
     amountOutMin,
     [wbnb, purchaseToken],
     process.env.RECIPIENT,
@@ -95,9 +93,11 @@ const BuyToken = async (txHash) => {
       gasPrice: ethers.utils.parseUnits("6", "gwei"),
     }
   );
-  await tx.wait();
+  console.log("Waiting for Transaction reciept...");
+  const receipt = await tx.wait();
   console.log("Token Purchase Complete");
-  console.log("LP Event txHash: " + txHash);
+  console.log("Associated LP Event txHash: " + txHash);
+  console.log("Your txHash: " + receipt.transactionHash);
   process.exit();
 };
 startConnection();
