@@ -9,8 +9,15 @@ const purchaseAmount = ethers.utils.parseUnits(
   "ether"
 );
 const slippage = process.env.SLIPPAGE;
+
+// Mainnet
 const wbnb = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"; // WBNB
 const pcs = "0x10ED43C718714eb63d5aA57B78B54704E256024E"; // PCSv2 Router
+
+// For Testnet: comment above two lines and uncomment two below
+//const wbnb = "0xae13d989dac2f0debff460ac112a837c89baa7cd"; // WBNB testnet
+//const pcs = "0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3"; // PCSv2 testnet
+
 const pcsAbi = new ethers.utils.Interface(require("./abi.json"));
 const EXPECTED_PONG_BACK = 30000;
 const KEEP_ALIVE_CHECK_INTERVAL = 15000;
@@ -41,14 +48,16 @@ const startConnection = () => {
       provider.getTransaction(txHash).then(async (tx) => {
         if (tx && tx.to) {
           if (tx.to === pcs) {
-            let re = new RegExp("^0xf305d719");
-            if (re.test(tx.data)) {
+            const re1 = new RegExp("^0xf305d719");
+            const re2 = new RegExp("^0x267dd102");
+            const re3 = new RegExp("^0xe8078d94");
+            if (re1.test(tx.data) || re2.test(tx.data) || re3.test(tx.data)) {
               const decodedInput = pcsAbi.parseTransaction({
                 data: tx.data,
                 value: tx.value,
               });
               if (purchaseToken === decodedInput.args[0]) {
-                await BuyToken(txHash);
+                await BuyToken(txHash).catch((error) => console.error(error));
               }
             }
           }
@@ -77,24 +86,25 @@ const startConnection = () => {
 };
 
 const BuyToken = async (txHash) => {
-  const amounts = await router.getAmountsOut(purchaseAmount, [
-    wbnb,
-    purchaseToken,
-  ]);
+  const amounts = await router
+    .getAmountsOut(purchaseAmount, [wbnb, purchaseToken])
+    .catch((error) => console.error(error));
   const amountOutMin = amounts[1].sub(amounts[1].div(slippage));
-  const tx = await router.swapExactETHForTokensSupportingFeeOnTransferTokens(
-    amountOutMin,
-    [wbnb, purchaseToken],
-    process.env.RECIPIENT,
-    Date.now() + 1000 * 60 * 5, //5 minutes
-    {
-      value: purchaseAmount,
-      gasLimit: 345684,
-      gasPrice: ethers.utils.parseUnits("6", "gwei"),
-    }
-  );
+  const tx = await router
+    .swapExactETHForTokensSupportingFeeOnTransferTokens(
+      amountOutMin,
+      [wbnb, purchaseToken],
+      process.env.RECIPIENT,
+      Date.now() + 1000 * 60 * 5, //5 minutes
+      {
+        value: purchaseAmount,
+        gasLimit: 345684,
+        gasPrice: ethers.utils.parseUnits("20", "gwei"),
+      }
+    )
+    .catch((error) => console.error(error));
   console.log("Waiting for Transaction reciept...");
-  const receipt = await tx.wait();
+  const receipt = await tx.wait().catch((error) => console.error(error));
   console.log("Token Purchase Complete");
   console.log("Associated LP Event txHash: " + txHash);
   console.log("Your txHash: " + receipt.transactionHash);
