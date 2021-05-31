@@ -57,7 +57,15 @@ const startConnection = () => {
                 value: tx.value,
               });
               if (purchaseToken === decodedInput.args[0]) {
-                await BuyToken(txHash).catch((error) => console.error(error));
+                await BuyToken(txHash).catch(async (error) => {
+                  console.error(error);
+                  console.log("####################");
+                  console.log("Retrying Once...");
+                  await BuyToken(txHash).catch((error) => {
+                    console.error(error);
+                    process.exit();
+                  });
+                });
               }
             }
           }
@@ -99,7 +107,7 @@ const BuyToken = async (txHash) => {
       {
         value: purchaseAmount,
         gasLimit: 345684,
-        gasPrice: ethers.utils.parseUnits("20", "gwei"),
+        gasPrice: ethers.utils.parseUnits("6", "gwei"),
       }
     )
     .catch((error) => console.error(error));
