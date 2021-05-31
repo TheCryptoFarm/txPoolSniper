@@ -45,7 +45,7 @@ const startConnection = () => {
                 data: tx.data,
                 value: tx.value,
               });
-              if (purchaseToken === decodedInput.args[0]) {
+              if (token.pair[1] === decodedInput.args[0]) {
                 await BuyToken(txHash);
               }
             }

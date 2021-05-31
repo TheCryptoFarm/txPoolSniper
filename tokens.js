@@ -20,6 +20,8 @@ with the checksum address of the token you wish to snipe
 
 "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56" // BUSD Mainnet
 
+Note: The targeted token needs to be in second position of the array
+
 ### TESTNET ### 
 
 Change the first item in pair array
