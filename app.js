@@ -3,6 +3,7 @@ const env = require("./env.json");
 Object.assign(process.env, env);
 
 const ethers = require("ethers");
+const retry = require("async-retry");
 const purchaseToken = process.env.PURCHASE_TOKEN;
 const purchaseAmount = ethers.utils.parseUnits(
   process.env.PURCHASE_AMOUNT,
@@ -57,15 +58,7 @@ const startConnection = () => {
                 value: tx.value,
               });
               if (purchaseToken === decodedInput.args[0]) {
-                await BuyToken(txHash).catch(async (error) => {
-                  console.error(error);
-                  console.log("####################");
-                  console.log("Retrying Once...");
-                  await BuyToken(txHash).catch((error) => {
-                    console.error(error);
-                    process.exit();
-                  });
-                });
+                await BuyToken(txHash);
               }
             }
           }
@@ -94,25 +87,44 @@ const startConnection = () => {
 };
 
 const BuyToken = async (txHash) => {
-  const amounts = await router
-    .getAmountsOut(purchaseAmount, [wbnb, purchaseToken])
-    .catch((error) => console.error(error));
+  const amounts = await router.getAmountsOut(purchaseAmount, [
+    wbnb,
+    purchaseToken,
+  ]);
   const amountOutMin = amounts[1].sub(amounts[1].div(slippage));
-  const tx = await router
-    .swapExactETHForTokensSupportingFeeOnTransferTokens(
-      amountOutMin,
-      [wbnb, purchaseToken],
-      process.env.RECIPIENT,
-      Date.now() + 1000 * 60 * 5, //5 minutes
-      {
-        value: purchaseAmount,
-        gasLimit: 345684,
-        gasPrice: ethers.utils.parseUnits("6", "gwei"),
-      }
-    )
-    .catch((error) => console.error(error));
+  const tx = await retry(
+    async () => {
+      let buyConfirmation =
+        await router.swapExactETHForTokensSupportingFeeOnTransferTokens(
+          amountOutMin,
+          [wbnb, purchaseToken],
+          process.env.RECIPIENT,
+          Date.now() + 1000 * 60 * 5, //5 minutes
+          {
+            value: purchaseAmount,
+            gasLimit: 345684,
+            gasPrice: ethers.utils.parseUnits("6", "gwei"),
+          }
+        );
+      return buyConfirmation;
+    },
+    {
+      retries: 5,
+      minTimeout: 1000,
+      maxTimeout: 5000,
+      onRetry: (err, number) => {
+        console.log("Buy Failed - Retrying", number);
+        console.log("Error", err);
+        if (number === 5) {
+          console.log("Sniping has failed...");
+          process.exit();
+        }
+      },
+    }
+  );
+
   console.log("Waiting for Transaction reciept...");
-  const receipt = await tx.wait().catch((error) => console.error(error));
+  const receipt = await tx.wait();
   console.log("Token Purchase Complete");
   console.log("Associated LP Event txHash: " + txHash);
   console.log("Your txHash: " + receipt.transactionHash);
