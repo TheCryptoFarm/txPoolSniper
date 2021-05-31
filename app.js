@@ -4,21 +4,9 @@ Object.assign(process.env, env);
 
 const ethers = require("ethers");
 const retry = require("async-retry");
-const purchaseToken = process.env.PURCHASE_TOKEN;
-const purchaseAmount = ethers.utils.parseUnits(
-  process.env.PURCHASE_AMOUNT,
-  "ether"
-);
-const slippage = process.env.SLIPPAGE;
+const tokens = require("./tokens.js");
 
-// Mainnet
-const wbnb = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"; // WBNB
-const pcs = "0x10ED43C718714eb63d5aA57B78B54704E256024E"; // PCSv2 Router
-
-// For Testnet: comment above two lines and uncomment two below
-//const wbnb = "0xae13d989dac2f0debff460ac112a837c89baa7cd"; // WBNB testnet
-//const pcs = "0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3"; // PCSv2 testnet
-
+const purchaseAmount = ethers.utils.parseUnits(tokens.purchaseAmount, "ether");
 const pcsAbi = new ethers.utils.Interface(require("./abi.json"));
 const EXPECTED_PONG_BACK = 30000;
 const KEEP_ALIVE_CHECK_INTERVAL = 15000;
@@ -27,7 +15,7 @@ const provider = new ethers.providers.WebSocketProvider(
 );
 const wallet = ethers.Wallet.fromMnemonic(process.env.MNEMONIC);
 const account = wallet.connect(provider);
-const router = new ethers.Contract(pcs, pcsAbi, account);
+const router = new ethers.Contract(tokens.router, pcsAbi, account);
 
 const startConnection = () => {
   let pingTimeout = null;
@@ -48,7 +36,7 @@ const startConnection = () => {
     provider.on("pending", async (txHash) => {
       provider.getTransaction(txHash).then(async (tx) => {
         if (tx && tx.to) {
-          if (tx.to === pcs) {
+          if (tx.to === tokens.router) {
             const re1 = new RegExp("^0xf305d719");
             const re2 = new RegExp("^0x267dd102");
             const re3 = new RegExp("^0xe8078d94");
@@ -87,17 +75,14 @@ const startConnection = () => {
 };
 
 const BuyToken = async (txHash) => {
-  const amounts = await router.getAmountsOut(purchaseAmount, [
-    wbnb,
-    purchaseToken,
-  ]);
-  const amountOutMin = amounts[1].sub(amounts[1].div(slippage));
+  const amounts = await router.getAmountsOut(purchaseAmount, tokens.pair);
+  const amountOutMin = amounts[1].sub(amounts[1].div(tokens.slippage));
   const tx = await retry(
     async () => {
       let buyConfirmation =
         await router.swapExactETHForTokensSupportingFeeOnTransferTokens(
           amountOutMin,
-          [wbnb, purchaseToken],
+          tokens.pair,
           process.env.RECIPIENT,
           Date.now() + 1000 * 60 * 5, //5 minutes
           {
@@ -122,7 +107,6 @@ const BuyToken = async (txHash) => {
       },
     }
   );
-
   console.log("Waiting for Transaction reciept...");
   const receipt = await tx.wait();
   console.log("Token Purchase Complete");
