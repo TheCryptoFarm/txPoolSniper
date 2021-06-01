@@ -95,8 +95,8 @@ const BuyToken = async (txHash) => {
     },
     {
       retries: 5,
-      minTimeout: 1000,
-      maxTimeout: 5000,
+      minTimeout: 10000,
+      maxTimeout: 15000,
       onRetry: (err, number) => {
         console.log("Buy Failed - Retrying", number);
         console.log("Error", err);
