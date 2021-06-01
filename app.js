@@ -45,7 +45,7 @@ const startConnection = () => {
                 data: tx.data,
                 value: tx.value,
               });
-              if (tokens.pair[1] === decodedInput.args[0]) {
+              if (token.pair[1] === decodedInput.args[0]) {
                 await BuyToken(txHash);
               }
             }
@@ -75,10 +75,10 @@ const startConnection = () => {
 };
 
 const BuyToken = async (txHash) => {
-  const amounts = await router.getAmountsOut(purchaseAmount, tokens.pair);
-  const amountOutMin = amounts[1].sub(amounts[1].div(tokens.slippage));
   const tx = await retry(
     async () => {
+      const amounts = await router.getAmountsOut(purchaseAmount, tokens.pair);
+      const amountOutMin = amounts[1].sub(amounts[1].div(tokens.slippage));
       let buyConfirmation =
         await router.swapExactETHForTokensSupportingFeeOnTransferTokens(
           amountOutMin,
