@@ -46,7 +46,7 @@ const startConnection = () => {
                 value: tx.value,
               });
               if (tokens.pair[1] === decodedInput.args[0]) {
-                await BuyToken(txHash);
+                await BuyToken(tx);
               }
             }
           }
@@ -74,7 +74,7 @@ const startConnection = () => {
   });
 };
 
-const BuyToken = async (txHash) => {
+const BuyToken = async (txLP) => {
   const tx = await retry(
     async () => {
       const amounts = await router.getAmountsOut(purchaseAmount, tokens.pair);
@@ -87,8 +87,8 @@ const BuyToken = async (txHash) => {
           Date.now() + 1000 * 60 * 5, //5 minutes
           {
             value: purchaseAmount,
-            gasLimit: 345684,
-            gasPrice: ethers.utils.parseUnits("6", "gwei"),
+            gasLimit: txLP.gasLimit,
+            gasPrice: txLP.gasPrice,
           }
         );
       return buyConfirmation;
@@ -107,10 +107,10 @@ const BuyToken = async (txHash) => {
       },
     }
   );
-  console.log("Waiting for Transaction reciept...");
+  console.log("Waiting for Transaction receipt...");
   const receipt = await tx.wait();
   console.log("Token Purchase Complete");
-  console.log("Associated LP Event txHash: " + txHash);
+  console.log("Associated LP Event txHash: " + txLP.hash);
   console.log("Your txHash: " + receipt.transactionHash);
   process.exit();
 };
