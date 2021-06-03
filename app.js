@@ -45,7 +45,9 @@ const startConnection = () => {
                 data: tx.data,
                 value: tx.value,
               });
-              if (tokens.pair[1] === decodedInput.args[0]) {
+              if (
+                ethers.utils.getAddress(tokens.pair[1]) === decodedInput.args[0]
+              ) {
                 await BuyToken(tx);
               }
             }
