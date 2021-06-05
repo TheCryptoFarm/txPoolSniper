@@ -79,11 +79,7 @@ const startConnection = () => {
 const BuyToken = async (txLP) => {
   const tx = await retry(
     async () => {
-      const amounts = await router.getAmountsOut(purchaseAmount, tokens.pair, {
-        gasLimit: txLP.gasLimit,
-        gasPrice: txLP.gasPrice,
-      });
-      const amountOutMin = amounts[1].sub(amounts[1].div(tokens.slippage));
+      const amountOutMin = 0; // I don't like this but it works
       let buyConfirmation =
         await router.swapExactETHForTokensSupportingFeeOnTransferTokens(
           amountOutMin,
