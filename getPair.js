@@ -8,6 +8,7 @@ const provider = new ethers.providers.WebSocketProvider(
 );
 const wallet = ethers.Wallet.fromMnemonic(process.env.MNEMONIC);
 const account = wallet.connect(provider);
+var args = process.argv.slice(2);
 
 const run = async () => {
   const factory = new ethers.Contract(
@@ -19,9 +20,13 @@ const run = async () => {
   );
   const pairAddress = await factory.getPair(
     "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c", // wbnb
-    "0xEebCfa94D165B4e6dcb3cddC3e1438e349d06b19" // token of LP you want to lookup
+    args[0]
   );
   console.log("pairAddress: " + pairAddress);
   process.exit();
 };
+if (!args[0]) {
+  console.log("Usage: node getPair [token contract]");
+  process.exit();
+}
 run();
