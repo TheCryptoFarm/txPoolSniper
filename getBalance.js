@@ -6,7 +6,7 @@ const ethers = require("ethers");
 const provider = new ethers.providers.WebSocketProvider(
   process.env.BSC_NODE_WSS
 );
-const wallet = ethers.Wallet.fromMnemonic(process.env.MNEMONIC);
+const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
 const account = wallet.connect(provider);
 
 const run = async () => {
