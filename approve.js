@@ -7,7 +7,7 @@ var args = process.argv.slice(2);
 const provider = new ethers.providers.WebSocketProvider(
   process.env.BSC_NODE_WSS
 );
-const wallet = ethers.Wallet.fromMnemonic(process.env.MNEMONIC);
+const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
 const account = wallet.connect(provider);
 const pcs = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 
