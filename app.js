@@ -10,16 +10,15 @@ const purchaseAmount = ethers.utils.parseUnits(tokens.purchaseAmount, "ether");
 const pcsAbi = new ethers.utils.Interface(require("./abi.json"));
 const EXPECTED_PONG_BACK = 30000;
 const KEEP_ALIVE_CHECK_INTERVAL = 15000;
-const provider = new ethers.providers.WebSocketProvider(
-  process.env.BSC_NODE_WSS
-);
-const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
-const account = wallet.connect(provider);
-const router = new ethers.Contract(tokens.router, pcsAbi, account);
-
+let pingTimeout = null;
+let keepAliveInterval = null;
 const startConnection = () => {
-  let pingTimeout = null;
-  let keepAliveInterval = null;
+  const provider = new ethers.providers.WebSocketProvider(
+    process.env.BSC_NODE_WSS
+  );
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
+  const router = new ethers.Contract(tokens.router, pcsAbi, account);
+  const account = wallet.connect(provider);
   provider._websocket.on("open", () => {
     console.log("txPool sniping has begun...\n");
     keepAliveInterval = setInterval(() => {
@@ -37,10 +36,8 @@ const startConnection = () => {
       provider.getTransaction(txHash).then(async (tx) => {
         if (tx && tx.to) {
           if (tx.to === tokens.router) {
-            const re1 = new RegExp("^0xf305d719");
-            const re2 = new RegExp("^0x267dd102");
-            const re3 = new RegExp("^0xe8078d94");
-            if (re1.test(tx.data) || re2.test(tx.data) || re3.test(tx.data)) {
+            const re = new RegExp("^0xf305d719");
+            if (re.test(tx.data)) {
               const decodedInput = pcsAbi.parseTransaction({
                 data: tx.data,
                 value: tx.value,
@@ -80,28 +77,27 @@ const BuyToken = async (txLP) => {
   const tx = await retry(
     async () => {
       const amountOutMin = 0; // I don't like this but it works
-      let buyConfirmation =
-        await router.swapExactETHForTokensSupportingFeeOnTransferTokens(
-          amountOutMin,
-          tokens.pair,
-          process.env.RECIPIENT,
-          Date.now() + 1000 * 60 * 5, //5 minutes
-          {
-            value: purchaseAmount,
-            gasLimit: txLP.gasLimit,
-            gasPrice: txLP.gasPrice,
-          }
-        );
+      let buyConfirmation = await router.swapExactETHForTokens(
+        amountOutMin,
+        tokens.pair,
+        process.env.RECIPIENT,
+        Date.now() + 1000 * 60 * 5, //5 minutes
+        {
+          value: purchaseAmount,
+          gasLimit: txLP.gasLimit,
+          gasPrice: txLP.gasPrice,
+        }
+      );
       return buyConfirmation;
     },
     {
-      retries: 5,
+      retries: 2,
       minTimeout: 10000,
       maxTimeout: 15000,
       onRetry: (err, number) => {
         console.log("Buy Failed - Retrying", number);
         console.log("Error", err);
-        if (number === 5) {
+        if (number === 2) {
           console.log("Sniping has failed...");
           process.exit();
         }
