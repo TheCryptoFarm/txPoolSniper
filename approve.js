@@ -12,26 +12,23 @@ const account = wallet.connect(provider);
 const pcs = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 
 const run = async () => {
-  const sellAmount = ethers.utils.parseUnits(args[1], "gwei");
   const sellContract = new ethers.Contract(
     args[0],
     [
       "function approve(address _spender, uint256 _value) public returns (bool success)",
+      "function name() external pure returns (string memory)",
     ],
     account
   );
-  console.log("Approving " + sellAmount + "(in gewi)"); 
-  const tx = await sellContract.approve(pcs, sellAmount);
+  const tokenName = await sellContract.name();
+  const tx = await sellContract.approve(pcs, ethers.constants.MaxUint256);
   const receipt = await tx.wait();
-  console.log("Approved");
+  console.log("Approved " + tokenName);
   console.log("Your txHash: " + receipt.transactionHash);
   process.exit();
 };
-
-if (!args[0] || !args[1]) {
-  console.log(
-    "Usge: node approve [token contract] [amount of tokens to approve to be sold]"
-  );
+if (!args[0]) {
+  console.log("Usage: node approve [token contract]");
   process.exit();
 }
 run();
