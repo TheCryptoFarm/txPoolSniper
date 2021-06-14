@@ -17,8 +17,8 @@ const startConnection = () => {
     process.env.BSC_NODE_WSS
   );
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
-  const router = new ethers.Contract(tokens.router, pcsAbi, account);
   const account = wallet.connect(provider);
+  const router = new ethers.Contract(tokens.router, pcsAbi, account);
   provider._websocket.on("open", () => {
     console.log("txPool sniping has begun...\n");
     keepAliveInterval = setInterval(() => {
