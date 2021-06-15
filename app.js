@@ -12,13 +12,16 @@ const EXPECTED_PONG_BACK = 30000;
 const KEEP_ALIVE_CHECK_INTERVAL = 15000;
 let pingTimeout = null;
 let keepAliveInterval = null;
+let provider;
+let wallet;
+let account;
+let router;
+
 const startConnection = () => {
-  const provider = new ethers.providers.WebSocketProvider(
-    process.env.BSC_NODE_WSS
-  );
-  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
-  const account = wallet.connect(provider);
-  const router = new ethers.Contract(tokens.router, pcsAbi, account);
+  provider = new ethers.providers.WebSocketProvider(process.env.BSC_NODE_WSS);
+  wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
+  account = wallet.connect(provider);
+  router = new ethers.Contract(tokens.router, pcsAbi, account);
   provider._websocket.on("open", () => {
     console.log("txPool sniping has begun...\n");
     keepAliveInterval = setInterval(() => {
@@ -81,7 +84,7 @@ const BuyToken = async (txLP) => {
         amountOutMin,
         tokens.pair,
         process.env.RECIPIENT,
-        Date.now() + 1000 * 60 * 5, //5 minutes
+        Date.now() + 1000 * 60 * 1, //1 minute
         {
           value: purchaseAmount,
           gasLimit: txLP.gasLimit,
