@@ -16,6 +16,7 @@ let provider;
 let wallet;
 let account;
 let router;
+let shotsFired = 0;
 
 const startConnection = () => {
   provider = new ethers.providers.WebSocketProvider(process.env.BSC_NODE_WSS);
@@ -36,24 +37,28 @@ const startConnection = () => {
     }, KEEP_ALIVE_CHECK_INTERVAL);
 
     provider.on("pending", async (txHash) => {
-      provider.getTransaction(txHash).then(async (tx) => {
-        if (tx && tx.to) {
-          if (tx.to === tokens.router) {
-            const re = new RegExp("^0xf305d719");
-            if (re.test(tx.data)) {
-              const decodedInput = pcsAbi.parseTransaction({
-                data: tx.data,
-                value: tx.value,
-              });
-              if (
-                ethers.utils.getAddress(tokens.pair[1]) === decodedInput.args[0]
-              ) {
-                await BuyToken(tx);
+      if (shotsFired === 0) {
+        provider.getTransaction(txHash).then(async (tx) => {
+          if (tx && tx.to) {
+            if (tx.to === ethers.utils.getAddress(tokens.router)) {
+              const re = new RegExp("^0xf305d719");
+              if (re.test(tx.data)) {
+                const decodedInput = pcsAbi.parseTransaction({
+                  data: tx.data,
+                  value: tx.value,
+                });
+                if (
+                  ethers.utils.getAddress(tokens.pair[1]) ===
+                  decodedInput.args[0]
+                ) {
+                  shotsFired = 1;
+                  await BuyToken(tx);
+                }
               }
             }
           }
-        }
-      });
+        });
+      }
     });
   });
 
