@@ -85,17 +85,18 @@ const BuyToken = async (txLP) => {
   const tx = await retry(
     async () => {
       const amountOutMin = 0; // I don't like this but it works
-      let buyConfirmation = await router.swapExactETHForTokens(
-        amountOutMin,
-        tokens.pair,
-        process.env.RECIPIENT,
-        Date.now() + 1000 * 60 * 1, //1 minute
-        {
-          value: purchaseAmount,
-          gasLimit: txLP.gasLimit,
-          gasPrice: txLP.gasPrice,
-        }
-      );
+      let buyConfirmation =
+        await router.swapExactETHForTokensSupportingFeeOnTransferTokens(
+          amountOutMin,
+          tokens.pair,
+          process.env.RECIPIENT,
+          Date.now() + 1000 * 60 * 1, //1 minute
+          {
+            value: purchaseAmount,
+            gasLimit: txLP.gasLimit,
+            gasPrice: txLP.gasPrice,
+          }
+        );
       return buyConfirmation;
     },
     {
