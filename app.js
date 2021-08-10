@@ -23,8 +23,10 @@ const startConnection = () => {
   wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
   account = wallet.connect(provider);
   router = new ethers.Contract(tokens.router, pcsAbi, account);
+
   provider._websocket.on("open", () => {
     console.log("txPool sniping has begun...\n");
+    tokens.router = ethers.utils.getAddress(tokens.router);
     keepAliveInterval = setInterval(() => {
       provider._websocket.ping();
       // Use `WebSocket#terminate()`, which immediately destroys the connection,
@@ -38,26 +40,29 @@ const startConnection = () => {
 
     provider.on("pending", async (txHash) => {
       if (shotsFired === 0) {
-        provider.getTransaction(txHash).then(async (tx) => {
-          if (tx && tx.to) {
-            if (tx.to === ethers.utils.getAddress(tokens.router)) {
-              const re = new RegExp("^0xf305d719");
-              if (re.test(tx.data)) {
-                const decodedInput = pcsAbi.parseTransaction({
-                  data: tx.data,
-                  value: tx.value,
-                });
-                if (
-                  ethers.utils.getAddress(tokens.pair[1]) ===
-                  decodedInput.args[0]
-                ) {
-                  shotsFired = 1;
-                  await BuyToken(tx);
+        provider
+          .getTransaction(txHash)
+          .then(async (tx) => {
+            if (tx && tx.to) {
+              if (tx.to === tokens.router) {
+                const re = new RegExp("^0xf305d719");
+                if (re.test(tx.data)) {
+                  const decodedInput = pcsAbi.parseTransaction({
+                    data: tx.data,
+                    value: tx.value,
+                  });
+                  if (
+                    ethers.utils.getAddress(tokens.pair[1]) ===
+                    decodedInput.args[0]
+                  ) {
+                    shotsFired = 1;
+                    await BuyToken(tx);
+                  }
                 }
               }
             }
-          }
-        });
+          })
+          .catch(() => {});
       }
     });
   });
