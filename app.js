@@ -25,7 +25,9 @@ const startConnection = () => {
   router = new ethers.Contract(tokens.router, pcsAbi, account);
 
   provider._websocket.on("open", () => {
-    console.log("txPool sniping has begun...\n");
+    console.log(
+      "txPool sniping has begun...patience is a virtue, my grasshopper..\n"
+    );
     tokens.router = ethers.utils.getAddress(tokens.router);
     keepAliveInterval = setInterval(() => {
       provider._websocket.ping();
