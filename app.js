@@ -107,8 +107,8 @@ const BuyToken = async (txLP) => {
     },
     {
       retries: tokens.buyRetries,
-      minTimeout: 250,
-      maxTimeout: 5000,
+      minTimeout: tokens.retryMinTimeout,
+      maxTimeout: tokens.retryMaxTimeout,
       onRetry: (err, number) => {
         console.log("Buy Failed - Retrying", number);
         console.log("Error", err);

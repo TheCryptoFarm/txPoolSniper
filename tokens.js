@@ -7,7 +7,9 @@ const tokens = {
   ],
   gasLimit: 1000000,
   gasPrice: 8,
-  buyRetries: 3
+  buyRetries: 3,
+  retryMinTimeout: 250,
+  retryMaxTimeout: 5000,
 };
 module.exports = tokens;
 
