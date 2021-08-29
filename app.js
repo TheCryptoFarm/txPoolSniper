@@ -126,7 +126,6 @@ const BuyToken = async (txLP) => {
       },
     }
   );
-  console.log("Token Purchase Complete");
   console.log("Associated LP Event txHash: " + txLP.hash);
   console.log("Your [pending] txHash: " + tx.hash);
   process.exit();
