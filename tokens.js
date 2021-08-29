@@ -5,8 +5,8 @@ const tokens = {
     "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", // WBNB
     "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82", // CAKE
   ],
-  gasLimit: 1000000,
-  gasPrice: 8,
+  gasLimit: "1000000",
+  gasPrice: "8",
   buyRetries: 3,
   retryMinTimeout: 250,
   retryMaxTimeout: 5000,
