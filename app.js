@@ -126,11 +126,9 @@ const BuyToken = async (txLP) => {
       },
     }
   );
-  console.log("Waiting for Transaction receipt...");
-  const receipt = await tx.wait();
   console.log("Token Purchase Complete");
   console.log("Associated LP Event txHash: " + txLP.hash);
-  console.log("Your txHash: " + receipt.transactionHash);
+  console.log("Your [pending] txHash: " + tx.hash);
   process.exit();
 };
 startConnection();
