@@ -18,6 +18,12 @@ let account;
 let router;
 let shotsFired = 0;
 
+async function wait(seconds) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, seconds * 1000);
+  });
+}
+
 const startConnection = () => {
   provider = new ethers.providers.WebSocketProvider(process.env.BSC_NODE_WSS);
   wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
@@ -58,6 +64,7 @@ const startConnection = () => {
                     decodedInput.args[0]
                   ) {
                     shotsFired = 1;
+                    await wait(tokens.buyDelay);
                     await BuyToken(tx);
                   }
                 }

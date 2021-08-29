@@ -7,6 +7,7 @@ const tokens = {
   ],
   gasLimit: "1000000",
   gasPrice: "8",
+  buyDelay: 1,
   buyRetries: 3,
   retryMinTimeout: 250,
   retryMaxTimeout: 5000,
