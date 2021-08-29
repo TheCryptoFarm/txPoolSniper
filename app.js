@@ -100,7 +100,7 @@ const BuyToken = async (txLP) => {
         {
           value: purchaseAmount,
           gasLimit: tokens.gasLimit,
-          gasPrice: tokens.gasPrice,
+          gasPrice: ethers.utils.parseUnits(tokens.gasPrice, "gwei"),
         }
       );
       return buyConfirmation;
