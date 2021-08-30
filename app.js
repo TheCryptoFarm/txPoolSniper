@@ -16,7 +16,8 @@ let provider;
 let wallet;
 let account;
 let router;
-let shotsFired = 0;
+let shotsFired;
+let grasshopper;
 
 async function wait(seconds) {
   return new Promise((resolve) => {
@@ -29,10 +30,12 @@ const startConnection = () => {
   wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
   account = wallet.connect(provider);
   router = new ethers.Contract(tokens.router, pcsAbi, account);
+  shotsFired = 0;
+  grasshopper = 0;
 
   provider._websocket.on("open", () => {
     console.log(
-      "txPool sniping has begun...patience is a virtue, my grasshopper..\n"
+      "txPool sniping has begun...patience is a virtue, my grasshopper..."
     );
     tokens.router = ethers.utils.getAddress(tokens.router);
     keepAliveInterval = setInterval(() => {
@@ -51,6 +54,10 @@ const startConnection = () => {
         provider
           .getTransaction(txHash)
           .then(async (tx) => {
+            if (grasshopper === 0) {
+              console.log("And, Yes..I am working...");
+              grasshopper = 1;
+            }
             if (tx && tx.to) {
               if (tx.to === tokens.router) {
                 const re = new RegExp("^0xf305d719");
@@ -103,7 +110,7 @@ const BuyToken = async (txLP) => {
         amountOutMin,
         tokens.pair,
         process.env.RECIPIENT,
-        Date.now() + 1000 * 60 * 1, //1 minute
+        Date.now() + 1000 * tokens.deadline,
         {
           value: purchaseAmount,
           gasLimit: tokens.gasLimit,
