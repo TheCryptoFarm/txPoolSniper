@@ -6,7 +6,7 @@ const tokens = {
     "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82", // CAKE
   ],
   gasLimit: "1000000",
-  gasPrice: "8",
+  gasPrice: "5",
   buyDelay: 1,
   buyRetries: 3,
   retryMinTimeout: 250,
