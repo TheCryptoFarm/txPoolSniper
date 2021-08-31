@@ -5,9 +5,8 @@ Object.assign(process.env, env);
 const ethers = require("ethers");
 const retry = require("async-retry");
 const tokens = require("./tokens.js");
-
-const purchaseAmount = ethers.utils.parseUnits(tokens.purchaseAmount, "ether");
 const pcsAbi = new ethers.utils.Interface(require("./abi.json"));
+const purchaseAmount = ethers.utils.parseUnits(tokens.purchaseAmount, "ether");
 const EXPECTED_PONG_BACK = 30000;
 const KEEP_ALIVE_CHECK_INTERVAL = 15000;
 let pingTimeout = null;
@@ -16,10 +15,9 @@ let provider;
 let wallet;
 let account;
 let router;
-let shotsFired;
 let grasshopper;
 
-async function wait(seconds) {
+async function Wait(seconds) {
   return new Promise((resolve) => {
     setTimeout(resolve, seconds * 1000);
   });
@@ -30,7 +28,6 @@ const startConnection = () => {
   wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
   account = wallet.connect(provider);
   router = new ethers.Contract(tokens.router, pcsAbi, account);
-  shotsFired = 0;
   grasshopper = 0;
 
   provider._websocket.on("open", () => {
@@ -50,36 +47,48 @@ const startConnection = () => {
     }, KEEP_ALIVE_CHECK_INTERVAL);
 
     provider.on("pending", async (txHash) => {
-      if (shotsFired === 0) {
-        provider
-          .getTransaction(txHash)
-          .then(async (tx) => {
-            if (grasshopper === 0) {
-              console.log("And, Yes..I am working...");
-              grasshopper = 1;
-            }
-            if (tx && tx.to) {
-              if (tx.to === tokens.router) {
-                const re = new RegExp("^0xf305d719");
-                if (re.test(tx.data)) {
-                  const decodedInput = pcsAbi.parseTransaction({
-                    data: tx.data,
-                    value: tx.value,
-                  });
-                  if (
-                    ethers.utils.getAddress(tokens.pair[1]) ===
-                    decodedInput.args[0]
-                  ) {
-                    shotsFired = 1;
-                    await wait(tokens.buyDelay);
-                    await BuyToken(tx);
-                  }
+      provider
+        .getTransaction(txHash)
+        .then(async (tx) => {
+          if (grasshopper === 0) {
+            console.log("And, Yes..I am working...");
+            grasshopper = 1;
+          }
+          if (tx && tx.to) {
+            if (tx.to === tokens.router) {
+              const re1 = new RegExp("^0xf305d719"); // Function: addLiqudityETH()
+              const re2 = new RegExp("^0xe27ad5eb"); // Function: setTradingIsEnabled()
+              const re3 = new RegExp("^0x0099d386"); // Function: enableTrade()
+              const re4 = new RegExp("^0x7b9e987a"); // Function: SetupEnableTrading()
+              const re5 = new RegExp("^0xc9567bf9"); // Function: openTrading()
+              const re6 = new RegExp("^0x0d295980"); // Function: tradingStatus()
+              const re7 = new RegExp("^0x555b1285"); // Function: buyTransactionEnabled()
+              if (
+                re1.test(tx.data) ||
+                re2.test(tx.data) ||
+                re3.test(tx.data) ||
+                re4.test(tx.data) ||
+                re5.test(tx.data) ||
+                re6.test(tx.data) ||
+                re7.test(tx.data)
+              ) {
+                const decodedInput = pcsAbi.parseTransaction({
+                  data: tx.data,
+                  value: tx.value,
+                });
+                if (
+                  ethers.utils.getAddress(tokens.pair[1]) ===
+                  decodedInput.args[0]
+                ) {
+                  provider.off("pending");
+                  await Wait(tokens.buyDelay);
+                  await BuyToken(tx);
                 }
               }
             }
-          })
-          .catch(() => {});
-      }
+          }
+        })
+        .catch(() => {});
     });
   });
 

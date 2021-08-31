@@ -10,7 +10,7 @@ const tokens = {
   buyDelay: 1,
   buyRetries: 3,
   retryMinTimeout: 250,
-  retryMaxTimeout: 5000,
+  retryMaxTimeout: 3000,
   deadline: 60,
 };
 module.exports = tokens;
