@@ -56,22 +56,8 @@ const startConnection = () => {
           }
           if (tx && tx.to) {
             if (tx.to === tokens.router) {
-              const re1 = new RegExp("^0xf305d719"); // Function: addLiqudityETH()
-              const re2 = new RegExp("^0xe27ad5eb"); // Function: setTradingIsEnabled()
-              const re3 = new RegExp("^0x0099d386"); // Function: enableTrade()
-              const re4 = new RegExp("^0x7b9e987a"); // Function: SetupEnableTrading()
-              const re5 = new RegExp("^0xc9567bf9"); // Function: openTrading()
-              const re6 = new RegExp("^0x0d295980"); // Function: tradingStatus()
-              const re7 = new RegExp("^0x555b1285"); // Function: buyTransactionEnabled()
-              if (
-                re1.test(tx.data) ||
-                re2.test(tx.data) ||
-                re3.test(tx.data) ||
-                re4.test(tx.data) ||
-                re5.test(tx.data) ||
-                re6.test(tx.data) ||
-                re7.test(tx.data)
-              ) {
+              const re1 = new RegExp("^0xf305d719");
+              if (re1.test(tx.data)) {
                 const decodedInput = pcsAbi.parseTransaction({
                   data: tx.data,
                   value: tx.value,
