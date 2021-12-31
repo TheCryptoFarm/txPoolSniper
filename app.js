@@ -6,7 +6,7 @@ const ethers = require("ethers");
 const retry = require("async-retry");
 const tokens = require("./tokens.js");
 const pcsAbi = new ethers.utils.Interface(require("./abi.json"));
-const purchaseAmount = ethers.utils.parseUnits(tokens.purchaseAmount, "ether");
+const tokenAbi = new ethers.utils.Interface(require("./tokenAbi.json"));
 const EXPECTED_PONG_BACK = 30000;
 const KEEP_ALIVE_CHECK_INTERVAL = 15000;
 let pingTimeout = null;
@@ -16,6 +16,8 @@ let wallet;
 let account;
 let router;
 let grasshopper;
+let swapEth;
+let purchaseAmount;
 
 async function Wait(seconds) {
   return new Promise((resolve) => {
@@ -29,10 +31,9 @@ const startConnection = () => {
   account = wallet.connect(provider);
   router = new ethers.Contract(tokens.router, pcsAbi, account);
   grasshopper = 0;
-
-  provider._websocket.on("open", () => {
+  provider._websocket.on("open", async () => {
     console.log(
-      "txPool sniping has begun...patience is a virtue, my grasshopper..."
+      "🏗️  txPool sniping has begun...patience is a virtue, my grasshopper..."
     );
     tokens.router = ethers.utils.getAddress(tokens.router);
     keepAliveInterval = setInterval(() => {
@@ -45,48 +46,58 @@ const startConnection = () => {
         provider._websocket.terminate();
       }, EXPECTED_PONG_BACK);
     }, KEEP_ALIVE_CHECK_INTERVAL);
+    const WETH = await router.WETH();
+    if (tokens.pair[0] === WETH) {
+      swapEth = 1;
+      purchaseAmount = ethers.utils.parseUnits(tokens.purchaseAmount, "ether");
+    } else {
+      await Approve();
+    }
+  });
 
-    provider.on("pending", async (txHash) => {
-      provider
-        .getTransaction(txHash)
-        .then(async (tx) => {
-          if (grasshopper === 0) {
-            console.log("And, Yes..I am working...");
-            grasshopper = 1;
-          }
-          if (tx && tx.to) {
-            if (tx.to === tokens.router) {
-              const re1 = new RegExp("^0xf305d719");
-              if (re1.test(tx.data)) {
-                const decodedInput = pcsAbi.parseTransaction({
-                  data: tx.data,
-                  value: tx.value,
-                });
-                if (
-                  ethers.utils.getAddress(tokens.pair[1]) ===
-                  decodedInput.args[0]
-                ) {
-                  provider.off("pending");
+  provider.on("pending", async (txHash) => {
+    provider
+      .getTransaction(txHash)
+      .then(async (tx) => {
+        if (grasshopper === 0) {
+          console.log("🚧  And, Yes..I am actually working...trust me...");
+          grasshopper = 1;
+        }
+        if (tx && tx.to) {
+          if (tx.to === tokens.router) {
+            const re1 = new RegExp("^0xf305d719");
+            const re2 = new RegExp("^0xe8e33700");
+            if (re1.test(tx.data) || re2.test(tx.data)) {
+              const decodedInput = pcsAbi.parseTransaction({
+                data: tx.data,
+                value: tx.value,
+              });
+              if (
+                ethers.utils.getAddress(tokens.pair[1]) ===
+                decodedInput.args[0]
+              ) {
+                provider.off("pending");
+                if (tokens.buyDelay > 0) {
                   await Wait(tokens.buyDelay);
-                  await BuyToken(tx);
                 }
+                await BuyToken(tx);
               }
             }
           }
-        })
-        .catch(() => {});
-    });
+        }
+      })
+      .catch(() => {});
   });
 
   provider._websocket.on("close", () => {
-    console.log("WebSocket Closed...Reconnecting...");
+    console.log("☢️ WebSocket Closed...Reconnecting...");
     clearInterval(keepAliveInterval);
     clearTimeout(pingTimeout);
     startConnection();
   });
 
   provider._websocket.on("error", () => {
-    console.log("Error. Attemptiing to Reconnect...");
+    console.log("☢️ Error. Attemptiing to Reconnect...");
     clearInterval(keepAliveInterval);
     clearTimeout(pingTimeout);
     startConnection();
@@ -97,39 +108,71 @@ const startConnection = () => {
   });
 };
 
+const Approve = async () => {
+  const contract = new ethers.Contract(
+    tokens.pair[0],
+    tokenAbi,
+    account
+  );
+  const tokenName = await contract.name();
+  const tokenDecimals = await contract.decimals();
+  purchaseAmount = ethers.utils.parseUnits(tokens.purchaseAmount, tokenDecimals);
+  const allowance = await contract.allowance(process.env.RECIPIENT, router);
+  if (allowance._hex === "0x00") {
+    const tx = await contract.approve(router, ethers.constants.MaxUint256);
+    const receipt = await tx.wait();
+    console.log(`🎟️ Approved ${tokenName} for swapping. ${receipt.transactionHash}`);
+  }
+};
+
 const BuyToken = async (txLP) => {
   const tx = await retry(
     async () => {
       const amountOutMin = 0; // I don't like this but it works
-      let buyConfirmation = await router.swapExactETHForTokens(
-        amountOutMin,
-        tokens.pair,
-        process.env.RECIPIENT,
-        Date.now() + 1000 * tokens.deadline,
-        {
-          value: purchaseAmount,
-          gasLimit: tokens.gasLimit,
-          gasPrice: txLP.gasPrice,
-        }
-      );
-      return buyConfirmation;
+      if (swapEth) {
+        const reciept = await router.swapExactETHForTokens(
+          amountOutMin,
+          tokens.pair,
+          process.env.RECIPIENT,
+          Date.now() + 1000 * tokens.deadline,
+          {
+            value: purchaseAmount,
+            gasLimit: tokens.gasLimit,
+            gasPrice: txLP.gasPrice,
+          }
+        );
+        return reciept;
+      } else {
+        const reciept = await router.swapExactTokensForTokens(
+          purchaseAmount,
+          amountOutMin,
+          tokens.pair,
+          process.env.RECIPIENT,
+          Date.now() + 1000 * tokens.deadline,
+          {
+            gasLimit: tokens.gasLimit,
+            gasPrice: txLP.gasPrice,
+          }
+        );
+        return reciept;
+      }
     },
     {
       retries: tokens.buyRetries,
       minTimeout: tokens.retryMinTimeout,
       maxTimeout: tokens.retryMaxTimeout,
       onRetry: (err, number) => {
-        console.log("Buy Failed - Retrying", number);
-        console.log("Error", err);
+        console.log("💰 Buy Failed - Retrying", number);
+        console.log(err);
         if (number === tokens.buyRetries) {
-          console.log("Sniping has failed...");
+          console.log("☢️ Sniping has failed...");
           process.exit();
         }
       },
     }
   );
-  console.log("Associated LP Event txHash: " + txLP.hash);
-  console.log("Your [pending] txHash: " + tx.hash);
+  console.log("💰 LP: " + txLP.hash);
+  console.log("🔫 Sniped: " + tx.hash);
   process.exit();
 };
 startConnection();
