@@ -122,7 +122,7 @@ const Approve = async () => {
   if (allowance._hex === "0x00") {
     const tx = await contract.approve(tokens.router, ethers.constants.MaxUint256);
     const receipt = await tx.wait();
-    console.log(`🎟️  Approved ${tokenName} for swapping. ${receipt.transactionHash}`);
+    console.log(`🎟️  Approved ${tokenName} for swapping... ${receipt.transactionHash}`);
   }
 };
 
