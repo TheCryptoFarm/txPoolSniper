@@ -36,7 +36,6 @@ const startConnection = () => {
     console.log(
       "🏗️  txPool sniping has begun...patience is a virtue, my grasshopper..."
     );
-    tokens.router = ethers.utils.getAddress(tokens.router);
     keepAliveInterval = setInterval(() => {
       provider._websocket.ping();
       // Use `WebSocket#terminate()`, which immediately destroys the connection,
@@ -65,7 +64,8 @@ const startConnection = () => {
           grasshopper = 1;
         }
         if (tx && tx.to) {
-          if (tx.to === tokens.router) {
+          if (ethers.utils.getAddress(tx.to) === 
+              ethers.utils.getAddress(tokens.router)){
             const re1 = new RegExp("^0xf305d719");
             const re2 = new RegExp("^0xe8e33700");
             if (re1.test(tx.data) || re2.test(tx.data)) {
