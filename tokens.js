@@ -24,10 +24,10 @@ pair: [
   "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82", // CAKE [to]
 ],
 
-If pair is WBNB we assume you are going to snipe using Ether value (BNB)
+If pair[0] is WBNB we assume you are going to snipe using Ether value (BNB)
                         ---NOT--- "WBNB Token"
 
-If pair is say BUSD or USDT (and others), we will approve token for sale on router
+If pair[0] is say BUSD or USDT (and others), we will approve token for sale on router
 before starting to snipe.
 
 purchaseAmount is in pair[0] token
