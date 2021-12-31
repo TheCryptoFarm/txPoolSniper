@@ -43,6 +43,6 @@ Change the router
     "0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3"; // PCSv2 Router Testnet
  
 Then use see https://bsc.kiemtienonline360.com/ for swapping sites / tokens
-    and Moralis.io for a testnet Websocket
+    and https://moralis.io/ for a testnet Websocket
 
 */
