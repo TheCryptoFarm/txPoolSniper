@@ -30,6 +30,7 @@ const startConnection = () => {
   wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
   account = wallet.connect(provider);
   router = new ethers.Contract(tokens.router, pcsAbi, account);
+  
   grasshopper = 0;
   provider._websocket.on("open", async () => {
     console.log(
@@ -47,7 +48,7 @@ const startConnection = () => {
       }, EXPECTED_PONG_BACK);
     }, KEEP_ALIVE_CHECK_INTERVAL);
     const WETH = await router.WETH();
-    if (tokens.pair[0] === WETH) {
+    if (ethers.utils.getAddress(tokens.pair[0]) === ethers.utils.getAddress(WETH)) {
       swapEth = 1;
       purchaseAmount = ethers.utils.parseUnits(tokens.purchaseAmount, "ether");
     } else {
@@ -117,11 +118,11 @@ const Approve = async () => {
   const tokenName = await contract.name();
   const tokenDecimals = await contract.decimals();
   purchaseAmount = ethers.utils.parseUnits(tokens.purchaseAmount, tokenDecimals);
-  const allowance = await contract.allowance(process.env.RECIPIENT, router);
+  const allowance = await contract.allowance(process.env.RECIPIENT, tokens.router);
   if (allowance._hex === "0x00") {
-    const tx = await contract.approve(router, ethers.constants.MaxUint256);
+    const tx = await contract.approve(tokens.router, ethers.constants.MaxUint256);
     const receipt = await tx.wait();
-    console.log(`🎟️ Approved ${tokenName} for swapping. ${receipt.transactionHash}`);
+    console.log(`🎟️  Approved ${tokenName} for swapping. ${receipt.transactionHash}`);
   }
 };
 
