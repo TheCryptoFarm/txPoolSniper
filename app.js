@@ -75,7 +75,9 @@ const startConnection = () => {
               });
               if (
                 ethers.utils.getAddress(tokens.pair[1]) ===
-                ethers.utils.getAddress(decodedInput.args[0])
+                ethers.utils.getAddress(decodedInput.args[0]) ||
+                ethers.utils.getAddress(tokens.pair[1]) ===
+                ethers.utils.getAddress(decodedInput.args[1])
               ) {
                 provider.off("pending");
                 if (tokens.buyDelay > 0) {
