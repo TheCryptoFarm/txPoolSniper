@@ -11,3 +11,4 @@
 This can be ran on a Quiknode, but you really need your own full node.
 
 
+Join us on Discord https://discord.gg/H582fcrrvG
